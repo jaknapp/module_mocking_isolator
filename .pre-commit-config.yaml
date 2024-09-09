@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1  # This version is confirmed to exist
+    hooks:
+      - id: isort
+        name: Sort imports with isort
+        args: ["--profile=black"]
+
+  - repo: https://github.com/psf/black
+    rev: 23.1.0  # Use the latest version available
+    hooks:
+      - id: black
+        name: Format code with Black
+        language_version: python3
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.289  # Use the latest version available
+    hooks:
+      - id: ruff
+        name: Lint code with Ruff
+        args: ["--fix"]  # This will automatically fix linting errors
+

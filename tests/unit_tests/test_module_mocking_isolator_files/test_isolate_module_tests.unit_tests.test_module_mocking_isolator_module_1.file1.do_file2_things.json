@@ -1,0 +1,28 @@
+{
+  "__type__": "RecordingMock",
+  "recorded_calls": [
+    {
+      "__type__": "tuple",
+      "value": [
+        {
+          "__type__": "tuple",
+          "value": [
+            {
+              "__type__": "tuple",
+              "value": []
+            },
+            {}
+          ]
+        },
+        {
+          "__type__": "RecordingMock",
+          "recorded_attribute_accesses": {
+            "x": {
+              "__repeat__": 3
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

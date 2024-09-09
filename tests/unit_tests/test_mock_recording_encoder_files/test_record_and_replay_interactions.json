@@ -1,0 +1,85 @@
+{
+  "__type__": "RecordingMock",
+  "recorded_attribute_accesses": {
+    "method1": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": [
+                      1
+                    ]
+                  },
+                  {}
+                ]
+              },
+              2
+            ]
+          }
+        ]
+      }
+    },
+    "method2": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": []
+                  },
+                  {
+                    "param": "value"
+                  }
+                ]
+              },
+              "value1"
+            ]
+          }
+        ]
+      }
+    },
+    "method3": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": []
+                  },
+                  {}
+                ]
+              },
+              {
+                "__type__": "RecordingMock",
+                "recorded_attribute_accesses": {
+                  "y": {
+                    "__repeat__": 2
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

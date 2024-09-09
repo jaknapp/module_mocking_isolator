@@ -1,0 +1,65 @@
+{
+  "__type__": "RecordingMock",
+  "recorded_attribute_accesses": {
+    "File3Class": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": []
+                  },
+                  {}
+                ]
+              },
+              {
+                "__type__": "RecordingMock",
+                "recorded_attribute_accesses": {
+                  "x": {
+                    "__repeat__": 4
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "do_file3_things": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": []
+                  },
+                  {}
+                ]
+              },
+              {
+                "__type__": "RecordingMock",
+                "recorded_attribute_accesses": {
+                  "x": {
+                    "__repeat__": 4
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
