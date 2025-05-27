@@ -1,3 +1,30 @@
+[tool.poetry]
+name = "module_mocking_isolator"
+version = "0.1.0"
+description = "A module mocking isolator for Python testing"
+authors = ["John Knapp"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "mock_isolator"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+mock = "*"
+bson = "^0.5.10"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+isort = "^6.0.1"
+ruff = "^0.11.11"
+pre-commit = "^4.2.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.black]
 line-length = 88
 
