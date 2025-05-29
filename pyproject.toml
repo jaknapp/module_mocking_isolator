@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "mock_isolator"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11"
 mock = "*"
 bson = "^0.5.10"
 

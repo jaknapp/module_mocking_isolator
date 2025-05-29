@@ -1,0 +1,57 @@
+{
+  "__type__": "RecordingMock",
+  "recorded_attribute_accesses": {
+    "add": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": [
+                      2,
+                      3
+                    ]
+                  },
+                  {}
+                ]
+              },
+              5
+            ]
+          }
+        ]
+      }
+    },
+    "multiply": {
+      "__repeat__": {
+        "__type__": "RecordingMock",
+        "recorded_calls": [
+          {
+            "__type__": "tuple",
+            "value": [
+              {
+                "__type__": "tuple",
+                "value": [
+                  {
+                    "__type__": "tuple",
+                    "value": [
+                      2,
+                      3
+                    ]
+                  },
+                  {}
+                ]
+              },
+              6
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

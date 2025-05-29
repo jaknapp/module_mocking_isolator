@@ -11,12 +11,7 @@ from mock_isolator.mock_recording_encoder import (
     get_json_file_mock_interaction_recording_store,
 )
 from mock_isolator.recording_mock import BasicRecordingMocker, RecordingMock
-
-
-class MockModuleMode(Enum):
-    RECORD = "RECORD"
-    REPLAY = "REPLAY"
-    INTERACTIVE = "INTERACTIVE"
+from mock_isolator.types import MockIsolatorMode
 
 
 def _get_patch_path(
@@ -93,7 +88,7 @@ def isolate_module_with_mocks(
     exit_stack: ExitStack,
     module_filepath: str,
     modules_to_mock: list[str],
-    mode: MockModuleMode,
+    mode: MockIsolatorMode,
     recording_filepath_prefix: str,
 ) -> None:
     """
@@ -109,7 +104,7 @@ def isolate_module_with_mocks(
         for patch_path, module_path, _ in patch_paths
     }
     recording_store = get_json_file_mock_interaction_recording_store()
-    if mode == MockModuleMode.REPLAY:
+    if mode == MockIsolatorMode.REPLAY:
         [
             exit_stack.enter_context(
                 cm=patch(
@@ -121,7 +116,7 @@ def isolate_module_with_mocks(
             )
             for module_path, recording_filepath in recording_filepaths.items()
         ]
-    elif mode == MockModuleMode.RECORD:
+    elif mode == MockIsolatorMode.RECORD:
         patch_path_modules = {
             patch_path: _load_item(module_path, alias)
             for patch_path, module_path, alias in patch_paths
@@ -150,3 +145,48 @@ def isolate_module_with_mocks(
                 )
 
         exit_stack.callback(write_recorded_mocks_to_file)
+
+
+def isolate_dependencies_with_mocks(
+    exit_stack: ExitStack,
+    dependencies: list[Any],
+    dependency_names: list[str],
+    mode: MockIsolatorMode,
+    recording_filepath_prefix: str,
+) -> None:
+    """
+    Records/replays mock interactions from the recording_filepath_prefix where
+    each mocked module gets a separate file.
+    """
+    recording_store = get_json_file_mock_interaction_recording_store()
+    dependency_name_to_filepath = {
+        dependency_name: f"{recording_filepath_prefix}{dependency_name}.json"
+        for dependency_name in dependency_names
+    }
+    if mode == MockIsolatorMode.REPLAY:
+        return {
+            mock_name: recording_store.load_recorded_mock_interactions_from_file(
+                filepath=dependency_name_to_filepath[mock_name]
+            )
+            for mock_name in dependency_names
+        }
+    elif mode == MockIsolatorMode.RECORD:
+        mocker = BasicRecordingMocker()
+        dependency_name_to_recording_mock = {
+            dependency_name: RecordingMock(wrapped_item=dependency, mocker=mocker)
+            for dependency_name, dependency in zip(dependency_names, dependencies)
+        }
+
+        def write_recorded_mocks_to_file():
+            for file in glob.glob(pathname=f"{recording_filepath_prefix}*"):
+                os.remove(path=file)
+            for dependency_name, recording_mock in dependency_name_to_recording_mock.items():
+                recording_store.store_recorded_mock_interactions_to_file(
+                    mock=recording_mock,
+                    filepath=dependency_name_to_filepath[dependency_name],
+                )
+
+        exit_stack.callback(write_recorded_mocks_to_file)
+        return dependency_name_to_recording_mock
+    
+    

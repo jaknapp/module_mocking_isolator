@@ -1,23 +1,23 @@
-from mock_isolator.isolator import MockModuleMode
+from mock_isolator.types import MockIsolatorMode
 
 
 class MockRecordingSettings:
     """
     Controls the mock recording/replay setting. Usage with hot tests:
 
-    >>> from mock_isolator.isolator import MockModuleMode
-    >>> MockRecordingSettings.set_mode(MockModuleMode.RECORD)
+    >>> from mock_isolator.isolator import MockIsolatorMode
+    >>> MockRecordingSettings.set_mode(MockIsolatorMode.RECORD)
     >>> test(...)
-    >>> MockRecordingSettings.set_mode(MockModuleMode.REPLAY)
+    >>> MockRecordingSettings.set_mode(MockIsolatorMode.REPLAY)
     >>> test(...)
     """
 
-    _mode = MockModuleMode.REPLAY
+    _mode = MockIsolatorMode.REPLAY
 
     @classmethod
-    def set_mode(cls, mode: MockModuleMode):
+    def set_mode(cls, mode: MockIsolatorMode):
         cls._mode = mode
 
     @classmethod
-    def get_mode(cls) -> MockModuleMode:
+    def get_mode(cls) -> MockIsolatorMode:
         return cls._mode

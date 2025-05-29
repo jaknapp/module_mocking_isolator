@@ -42,7 +42,7 @@ with ExitStack() as stack:
             "tests.mock_isolator.test_module_mocking_isolator_module_2.file2",
             "tests.mock_isolator.test_module_mocking_isolator_module_2.file3",
         ],
-        mode=mode, # MockModuleMode.REPLAY or MockModuleMode.RECORD
+        mode=mode, # MockIsolatorMode.REPLAY or MockIsolatorMode.RECORD
         recording_filepath_prefix=recording_filepath_prefix,
     )
 ```
@@ -52,7 +52,7 @@ Below is an example `conftests.py` to set the mode based on an environment varia
 ```python
 import os
 import pytest
-from mock_isolator.mock_recording_settings import MockRecordingSettings, MockModuleMode
+from mock_isolator.mock_recording_settings import MockRecordingSettings, MockIsolatorMode
 
 # Configure mock mode based on environment variable
 @pytest.hookimpl(tryfirst=True)  # Ensures this runs early
@@ -60,9 +60,9 @@ def pytest_configure(config):
     mode = os.getenv('MOCK_MODE', 'REPLAY').upper()  # Default to REPLAY mode
 
     if mode == 'RECORD':
-        MockRecordingSettings.set_mode(MockModuleMode.RECORD)
+        MockRecordingSettings.set_mode(MockIsolatorMode.RECORD)
     else:
-        MockRecordingSettings.set_mode(MockModuleMode.REPLAY)
+        MockRecordingSettings.set_mode(MockIsolatorMode.REPLAY)
 
 # Optionally, add a pytest command-line option for mode
 def pytest_addoption(parser):
@@ -78,21 +78,21 @@ def pytest_configure(config):
         mode = os.getenv('MOCK_MODE', 'REPLAY').upper()
 
     if mode == 'RECORD':
-        MockRecordingSettings.set_mode(MockModuleMode.RECORD)
+        MockRecordingSettings.set_mode(MockIsolatorMode.RECORD)
     else:
-        MockRecordingSettings.set_mode(MockModuleMode.REPLAY)
+        MockRecordingSettings.set_mode(MockIsolatorMode.REPLAY)
 ```
 
 For running tests in a hot-reload REPL, the mode can be set directly:
 
 ```python
-from mock_isolator.mock_recording_settings import MockRecordingSettings, MockModuleMode
+from mock_isolator.mock_recording_settings import MockRecordingSettings, MockIsolatorMode
 
 # Set to Record mode
-MockRecordingSettings.set_mode(MockModuleMode.RECORD)
+MockRecordingSettings.set_mode(MockIsolatorMode.RECORD)
 
 # Or set to Replay mode
-MockRecordingSettings.set_mode(MockModuleMode.REPLAY)
+MockRecordingSettings.set_mode(MockIsolatorMode.REPLAY)
 ```
 
 Be sure to pass the mode based on the setting in the tests:
