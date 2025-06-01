@@ -1,4 +1,6 @@
-from typing import Any, Tuple
+from types import TracebackType
+from typing import Any, Tuple, Type
+import asyncio
 
 
 class ReplayingMock:
@@ -11,19 +13,27 @@ class ReplayingMock:
         self,
         recorded_attribute_accesses: dict[str, list[Any] | dict[str, Any] | Any],
         recorded_calls: list[Tuple[Tuple[Any, ...], dict[str, Any]]],
+        target_type: Type[Any] | None = None,
     ):
         self._recorded_attribute_accesses = recorded_attribute_accesses
         self._recorded_calls = recorded_calls
         self._current_call_index = 0
+        self._target_type = target_type
 
     def __getattribute__(self, name: str) -> Any:
         if name in [
             "_recorded_attribute_accesses",
             "_recorded_calls",
             "_current_call_index",
+            "_target_type",
             "__class__",
             "__dict__",
             "__getattribute__",
+            "__call__",
+            "__aenter__",
+            "__aexit__",
+            "__enter__",
+            "__exit__",
         ]:
             return object.__getattribute__(self, name)
         if name in self._recorded_attribute_accesses:
@@ -31,7 +41,18 @@ class ReplayingMock:
             if isinstance(attribute, dict) and "__repeat__" in attribute:
                 return attribute["__repeat__"]
             if isinstance(attribute, list):
-                return attribute.pop(0)
+                result = attribute.pop(0)
+                # Check if the underlying type has an async method with this name
+                target_type = object.__getattribute__(self, "_target_type")
+                if target_type is not None:
+                    target_attr = getattr(target_type, name, None)
+                    if callable(target_attr) and asyncio.iscoroutinefunction(target_attr):
+                        async def wrapped_coroutine(*args, **kwargs):
+                            if isinstance(result, Exception):
+                                raise result
+                            return result
+                        return wrapped_coroutine
+                return result
             return attribute
         raise AttributeError(f"Attribute {name} not found in replayed interactions.")
 
@@ -41,3 +62,45 @@ class ReplayingMock:
             self._current_call_index += 1
             return result[1]
         raise ValueError("No more recorded calls to replay.")
+
+    async def __aenter__(self) -> Any:
+        if "__aenter__" in self._recorded_attribute_accesses:
+            result = self._recorded_attribute_accesses["__aenter__"]
+            if isinstance(result, list):
+                return result.pop(0)
+            return result
+        raise AttributeError("No recorded __aenter__ result found.")
+
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
+        if "__aexit__" in self._recorded_attribute_accesses:
+            result = self._recorded_attribute_accesses["__aexit__"]
+            if isinstance(result, list):
+                return result.pop(0)
+            return result
+        return False
+
+    def __enter__(self) -> Any:
+        if "__enter__" in self._recorded_attribute_accesses:
+            result = self._recorded_attribute_accesses["__enter__"]
+            if isinstance(result, list):
+                return result.pop(0)
+            return result
+        raise AttributeError("No recorded __enter__ result found.")
+
+    def __exit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
+        if "__exit__" in self._recorded_attribute_accesses:
+            result = self._recorded_attribute_accesses["__exit__"]
+            if isinstance(result, list):
+                return result.pop(0)
+            return result
+        return False

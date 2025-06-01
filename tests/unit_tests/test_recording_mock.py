@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -102,3 +103,129 @@ def test_basic_recording_mocker_wrap_item_with_recording_mocks(
     wrapped_object_id = mocker.wrap_item_with_recording_mocks(object_id)
     assert wrapped_object_id == object_id
     assert isinstance(wrapped_object_id, ObjectId)
+
+def test_recording_mock_context_manager_sync(mocker: BasicRecordingMocker) -> None:
+    class SyncContext:
+        def __enter__(self):
+            return "entered"
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return False
+
+    mock = RecordingMock(SyncContext(), mocker)
+
+    with mock as result:
+        assert result == "entered"
+
+    assert "__enter__" in mock.recorded_attribute_accesses
+    assert mock.recorded_attribute_accesses["__enter__"][0] == "entered"
+
+    assert "__exit__" in mock.recorded_attribute_accesses
+    assert mock.recorded_attribute_accesses["__exit__"][0] is False
+
+@pytest.mark.asyncio
+async def test_recording_mock_context_manager_async(mocker: BasicRecordingMocker) -> None:
+    class AsyncContext:
+        async def __aenter__(self):
+            return "async entered"
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            return True
+
+    mock = RecordingMock(AsyncContext(), mocker)
+
+    async with mock as result:
+        assert result == "async entered"
+
+    assert "__aenter__" in mock.recorded_attribute_accesses
+    assert mock.recorded_attribute_accesses["__aenter__"][0] == "async entered"
+
+    assert "__aexit__" in mock.recorded_attribute_accesses
+    assert mock.recorded_attribute_accesses["__aexit__"][0] is True
+
+def test_recording_mock_context_manager_sync_with_exception(mocker: BasicRecordingMocker) -> None:
+    class FailingContext:
+        def __enter__(self):
+            return "ok"
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            assert exc_type is ValueError
+            return True  # suppress the exception
+
+    mock = RecordingMock(FailingContext(), mocker)
+
+    try:
+        with mock:
+            raise ValueError("fail!")
+    except ValueError:
+        pytest.fail("Exception should have been suppressed")
+
+    assert "__exit__" in mock.recorded_attribute_accesses
+    assert mock.recorded_attribute_accesses["__exit__"][0] is True
+
+def test_recording_mock_context_manager_async_with_exception(mocker: BasicRecordingMocker) -> None:
+    class AsyncFailingContext:
+        async def __aenter__(self):
+            return "async ok"
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            assert exc_type is KeyError
+            return True  # suppress the exception
+
+    async def run_test():
+        mock = RecordingMock(AsyncFailingContext(), mocker)
+
+        try:
+            async with mock:
+                raise KeyError("fail async")
+        except KeyError:
+            pytest.fail("Exception should have been suppressed")
+
+        assert "__aexit__" in mock.recorded_attribute_accesses
+        assert mock.recorded_attribute_accesses["__aexit__"][0] is True
+
+    asyncio.run(run_test())
+
+@pytest.mark.asyncio
+async def test_recording_mock_async_method(mocker: BasicRecordingMocker) -> None:
+    class AsyncClass:
+        async def async_method(self, x: int) -> int:
+            return x + 1
+
+    instance = AsyncClass()
+    mock = RecordingMock(instance, mocker)
+
+    result = await mock.async_method(5)
+    assert result == 6
+    assert "async_method" in mock.recorded_attribute_accesses
+    assert mock.recorded_attribute_accesses["async_method"] == [6]
+
+@pytest.mark.asyncio
+async def test_recording_mock_async_method_chain(mocker: BasicRecordingMocker) -> None:
+    class AsyncClass:
+        async def method1(self) -> int:
+            return 1
+        async def method2(self, x: int) -> int:
+            return x + 1
+
+    instance = AsyncClass()
+    mock = RecordingMock(instance, mocker)
+
+    result1 = await mock.method1()
+    result2 = await mock.method2(result1)
+    assert result1 == 1
+    assert result2 == 2
+    assert mock.recorded_attribute_accesses["method1"] == [1]
+    assert mock.recorded_attribute_accesses["method2"] == [2]
+
+@pytest.mark.asyncio
+async def test_recording_mock_async_method_with_exception(mocker: BasicRecordingMocker) -> None:
+    class AsyncClass:
+        async def failing_method(self) -> None:
+            raise ValueError("test error")
+
+    instance = AsyncClass()
+    mock = RecordingMock(instance, mocker)
+
+    with pytest.raises(ValueError, match="test error"):
+        await mock.failing_method()

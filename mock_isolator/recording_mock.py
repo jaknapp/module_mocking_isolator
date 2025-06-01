@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import date, datetime
 from decimal import Decimal
+from types import TracebackType
 from typing import Any, Tuple, Type
+import asyncio
 
 from bson import ObjectId
 
@@ -38,6 +40,18 @@ class RecordingMock:
             return object.__getattribute__(self, name)
         wrapped_item = object.__getattribute__(self, "_wrapped_item")
         attribute = getattr(wrapped_item, name)
+        
+        # Handle coroutines
+        if callable(attribute) and asyncio.iscoroutinefunction(attribute):
+            async def wrapped_coroutine(*args, **kwargs):
+                result = await attribute(*args, **kwargs)
+                wrapped_result = self._mocker.wrap_item_with_recording_mocks(item=result)
+                if name not in self.recorded_attribute_accesses:
+                    self.recorded_attribute_accesses[name] = []
+                self.recorded_attribute_accesses[name].append(wrapped_result)
+                return wrapped_result
+            return wrapped_coroutine
+            
         wrapped_attribute = self._mocker.wrap_item_with_recording_mocks(item=attribute)
         if name not in self.recorded_attribute_accesses:
             self.recorded_attribute_accesses[name] = []
@@ -63,6 +77,38 @@ class RecordingMock:
 
     def __get__(self, instance: Any | None, owner: Type[Any] | None = None) -> Any:
         return self._wrapped_item
+    
+    async def __aenter__(self) -> Any:
+        result = await self._wrapped_item.__aenter__()
+        wrapped_result = self._mocker.wrap_item_with_recording_mocks(result)
+        self.recorded_attribute_accesses.setdefault("__aenter__", []).append(wrapped_result)
+        return wrapped_result
+
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
+        result = await self._wrapped_item.__aexit__(exc_type, exc_val, exc_tb)
+        self.recorded_attribute_accesses.setdefault("__aexit__", []).append(result)
+        return result
+
+    def __enter__(self) -> Any:
+        result = self._wrapped_item.__enter__()
+        wrapped_result = self._mocker.wrap_item_with_recording_mocks(result)
+        self.recorded_attribute_accesses.setdefault("__enter__", []).append(wrapped_result)
+        return wrapped_result
+
+    def __exit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
+        result = self._wrapped_item.__exit__(exc_type, exc_val, exc_tb)
+        self.recorded_attribute_accesses.setdefault("__exit__", []).append(result)
+        return result
 
 
 class BasicRecordingMocker(RecordingMocker):
