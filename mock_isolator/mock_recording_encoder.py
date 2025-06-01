@@ -110,17 +110,23 @@ class DictMockRecordingEncoder(MockRecordingEncoder[DictEncodingType]):
                     "__type__": "RecordingMock",
                 }
                 if item.recorded_attribute_accesses:
-                    serialized["recorded_attribute_accesses"] = {
-                        k: (
-                            {"__repeat__": encode_item(v[0])}
-                            if len(v) > 0
-                            and all(
-                                encode_item(v[0]) == encode_item(attr) for attr in v
-                            )
-                            else [encode_item(attr) for attr in v]
-                        )
+                    encoded_attribute_accesses = {
+                        k: [encode_item(attr) for attr in v]
                         for k, v in item.recorded_attribute_accesses.items()
                     }
+                    encoded_attribute_accesses_compacted = {
+                        k: (
+                            {"__repeat__": v[0]}
+                            if len(v) > 0
+                            and all(
+                                v[0] == attr for attr in v
+                            )
+                            else v
+                        )
+                        for k, v in encoded_attribute_accesses.items()
+                    }
+
+                    serialized["recorded_attribute_accesses"] = encoded_attribute_accesses_compacted
                 if item.recorded_calls:
                     serialized["recorded_calls"] = [
                         encode_item(call) for call in item.recorded_calls
