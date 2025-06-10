@@ -218,3 +218,24 @@ async def test_replaying_mock_async_method_without_target_type() -> None:
     # Without target_type, we can't know if it should be async
     with pytest.raises(TypeError, match="'int' object is not callable"):
         await mock.async_method(5)
+
+@pytest.mark.asyncio
+async def test_replaying_mock_async_iteration() -> None:
+    mock = ReplayingMock(
+        recorded_attribute_accesses={
+            "__aiter__": [{"__type__": "async_value", "value": None}],
+            "__anext__": [
+                {"__type__": "async_value", "value": 1},
+                {"__type__": "async_value", "value": 2},
+                {"__type__": "async_value", "value": 3},
+                {"__type__": "async_value", "value": StopAsyncIteration()}
+            ]
+        },
+        recorded_calls=[]
+    )
+
+    results = []
+    async for item in mock:
+        results.append(item)
+
+    assert results == [1, 2, 3]

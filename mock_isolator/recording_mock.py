@@ -115,6 +115,36 @@ class RecordingMock:
         self.recorded_attribute_accesses.setdefault("__exit__", []).append(result)
         return result
 
+    def __aiter__(self) -> Any:
+        wrapped_item = object.__getattribute__(self, "_wrapped_item")
+        aiter = wrapped_item.__aiter__()
+        wrapped_aiter = self._mocker.wrap_item_with_recording_mocks(item=aiter)
+        if "__aiter__" not in self.recorded_attribute_accesses:
+            self.recorded_attribute_accesses["__aiter__"] = []
+            self.recorded_async_attribute_access_indexes["__aiter__"] = set()
+        self.recorded_async_attribute_access_indexes["__aiter__"].add(len(self.recorded_attribute_accesses["__aiter__"]))
+        self.recorded_attribute_accesses["__aiter__"].append(wrapped_aiter)
+        return self
+
+    async def __anext__(self) -> Any:
+        wrapped_item = object.__getattribute__(self, "_wrapped_item")
+        try:
+            result = await wrapped_item.__anext__()
+            wrapped_result = self._mocker.wrap_item_with_recording_mocks(item=result)
+            if "__anext__" not in self.recorded_attribute_accesses:
+                self.recorded_attribute_accesses["__anext__"] = []
+                self.recorded_async_attribute_access_indexes["__anext__"] = set()
+            self.recorded_async_attribute_access_indexes["__anext__"].add(len(self.recorded_attribute_accesses["__anext__"]))
+            self.recorded_attribute_accesses["__anext__"].append(wrapped_result)
+            return wrapped_result
+        except StopAsyncIteration:
+            if "__anext__" not in self.recorded_attribute_accesses:
+                self.recorded_attribute_accesses["__anext__"] = []
+                self.recorded_async_attribute_access_indexes["__anext__"] = set()
+            self.recorded_async_attribute_access_indexes["__anext__"].add(len(self.recorded_attribute_accesses["__anext__"]))
+            self.recorded_attribute_accesses["__anext__"].append(StopAsyncIteration())
+            raise
+
 
 class BasicRecordingMocker(RecordingMocker):
     def __init__(

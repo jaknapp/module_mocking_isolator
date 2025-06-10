@@ -229,3 +229,29 @@ async def test_recording_mock_async_method_with_exception(mocker: BasicRecording
 
     with pytest.raises(ValueError, match="test error"):
         await mock.failing_method()
+
+@pytest.mark.asyncio
+async def test_recording_mock_async_iteration(mocker: BasicRecordingMocker) -> None:
+    class AsyncIterable:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if not hasattr(self, '_count'):
+                self._count = 0
+            if self._count >= 3:
+                raise StopAsyncIteration
+            self._count += 1
+            return self._count
+
+    instance = AsyncIterable()
+    mock = RecordingMock(instance, mocker)
+
+    results = []
+    async for item in mock:
+        results.append(item)
+
+    assert results == [1, 2, 3]
+    assert "__aiter__" in mock.recorded_attribute_accesses
+    assert "__anext__" in mock.recorded_attribute_accesses
+    assert len(mock.recorded_attribute_accesses["__anext__"]) == 4  # 3 values + StopAsyncIteration
