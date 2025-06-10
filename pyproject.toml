@@ -41,3 +41,5 @@ select = ["E", "F", "W", "C90"]
 addopts = "-ra"
 testpaths = ["tests"]
 pythonpath = ["."]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
