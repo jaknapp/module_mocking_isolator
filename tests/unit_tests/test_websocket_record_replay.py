@@ -54,13 +54,12 @@ async def test_websocket_recording(tmp_path):
 async def test_websocket_replay():
     mock = ReplayingMock(
         recorded_attribute_accesses={
-            "connect": [None],
-            "send": [None],
-            "recv": ["echo: hello"],
-            "close": [None],
+            "connect": [{"__type__": "async_value", "value": None}],
+            "send": [{"__type__": "async_value", "value": None}],
+            "recv": [{"__type__": "async_value", "value": "echo: hello"}],
+            "close": [{"__type__": "async_value", "value": None}],
         },
-        recorded_calls=[],
-        target_type=WebSocketClient
+        recorded_calls=[]
     )
 
     await mock.connect()

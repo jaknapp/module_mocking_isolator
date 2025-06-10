@@ -42,16 +42,13 @@ class ReplayingMock:
                 return attribute["__repeat__"]
             if isinstance(attribute, list):
                 result = attribute.pop(0)
-                # Check if the underlying type has an async method with this name
-                target_type = object.__getattribute__(self, "_target_type")
-                if target_type is not None:
-                    target_attr = getattr(target_type, name, None)
-                    if callable(target_attr) and asyncio.iscoroutinefunction(target_attr):
-                        async def wrapped_coroutine(*args, **kwargs):
-                            if isinstance(result, Exception):
-                                raise result
-                            return result
-                        return wrapped_coroutine
+                # Check if this is an async value
+                if isinstance(result, dict) and result.get("__type__") == "async_value":
+                    async def wrapped_coroutine(*args, **kwargs):
+                        if isinstance(result["value"], Exception):
+                            raise result["value"]
+                        return result["value"]
+                    return wrapped_coroutine
                 return result
             return attribute
         raise AttributeError(f"Attribute {name} not found in replayed interactions.")

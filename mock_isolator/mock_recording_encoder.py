@@ -96,6 +96,7 @@ class DictMockRecordingEncoder(MockRecordingEncoder[DictEncodingType]):
 
         def encode_item(  # noqa: C901
             item: Any,
+            is_async: bool = False,
         ) -> DictEncodingType:
             if not isinstance(
                 item, DictMockRecordingEncoderValueTypes + (RecordingMock,)
@@ -111,7 +112,7 @@ class DictMockRecordingEncoder(MockRecordingEncoder[DictEncodingType]):
                 }
                 if item.recorded_attribute_accesses:
                     encoded_attribute_accesses = {
-                        k: [encode_item(attr) for attr in v]
+                        k: [encode_item(attr, is_async) for (attr, is_async) in zip(v, (item.recorded_async_attribute_access_indexes.get(k, {}).get(i, False) for i in range(len(v))))]
                         for k, v in item.recorded_attribute_accesses.items()
                     }
                     encoded_attribute_accesses_compacted = {
@@ -150,6 +151,8 @@ class DictMockRecordingEncoder(MockRecordingEncoder[DictEncodingType]):
             elif isinstance(item, set):
                 return {"__type__": "set", "value": [encode_item(i) for i in item]}
             elif isinstance(item, (int, str, float, bool, type(None))):
+                if is_async:
+                    return {"__type__": "async_value", "value": item}
                 return item
             elif isinstance(item, dict):
                 return {k: encode_item(v) for k, v in item.items()}

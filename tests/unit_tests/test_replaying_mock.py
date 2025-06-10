@@ -161,10 +161,9 @@ async def test_replaying_mock_async_method() -> None:
 
     mock = ReplayingMock(
         recorded_attribute_accesses={
-            "async_method": [6]
+            "async_method": [{"__type__": "async_value", "value": 6}]
         },
-        recorded_calls=[],
-        target_type=AsyncClass
+        recorded_calls=[]
     )
 
     result = await mock.async_method(5)
@@ -180,11 +179,10 @@ async def test_replaying_mock_async_method_chain() -> None:
 
     mock = ReplayingMock(
         recorded_attribute_accesses={
-            "method1": [1],
-            "method2": [2]
+            "method1": [{"__type__": "async_value", "value": 1}],
+            "method2": [{"__type__": "async_value", "value": 2}]
         },
-        recorded_calls=[],
-        target_type=AsyncClass
+        recorded_calls=[]
     )
 
     result1 = await mock.method1()
@@ -200,10 +198,9 @@ async def test_replaying_mock_async_method_with_exception() -> None:
 
     mock = ReplayingMock(
         recorded_attribute_accesses={
-            "failing_method": [ValueError("test error")]
+            "failing_method": [{"__type__": "async_value", "value": ValueError("test error")}]
         },
-        recorded_calls=[],
-        target_type=AsyncClass
+        recorded_calls=[]
     )
 
     with pytest.raises(ValueError, match="test error"):

@@ -25,12 +25,14 @@ class RecordingMock:
         self._wrapped_item = wrapped_item
         self._mocker = mocker
         self.recorded_attribute_accesses: dict[str, list[Any]] = {}
+        self.recorded_async_attribute_access_indexes: dict[str, set[int]] = {}
         self.recorded_calls: list[Tuple[Tuple[Any, ...], dict[str, Any]]] = []
 
     def __getattribute__(self, name: str) -> Any:
         if name in [
             "_wrapped_item",
             "recorded_attribute_accesses",
+            "recorded_async_attribute_access_indexes",
             "recorded_calls",
             "_mocker",
             "__class__",
@@ -48,6 +50,8 @@ class RecordingMock:
                 wrapped_result = self._mocker.wrap_item_with_recording_mocks(item=result)
                 if name not in self.recorded_attribute_accesses:
                     self.recorded_attribute_accesses[name] = []
+                    self.recorded_async_attribute_access_indexes[name] = set()
+                self.recorded_async_attribute_access_indexes[name].add(len(self.recorded_attribute_accesses[name]))
                 self.recorded_attribute_accesses[name].append(wrapped_result)
                 return wrapped_result
             return wrapped_coroutine
@@ -63,6 +67,7 @@ class RecordingMock:
             "_wrapped_item",
             "_mocker",
             "recorded_attribute_accesses",
+            "recorded_async_attribute_access_indexes",
             "recorded_calls",
         ]:
             object.__setattr__(self, name, value)
