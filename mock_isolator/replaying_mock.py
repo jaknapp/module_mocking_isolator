@@ -102,16 +102,16 @@ class ReplayingMock:
             return result
         return False
 
-    async def __aiter__(self) -> Any:
-        if "__aiter__" in self._recorded_attribute_accesses:
-            result = self._recorded_attribute_accesses["__aiter__"]
-            if isinstance(result, list):
-                value = result.pop(0)
-                if isinstance(value, dict) and value.get("__type__") == "async_value":
-                    return self
-                return self
-            return self
-        raise AttributeError("No recorded __aiter__ result found.")
+    # async def __aiter__(self) -> Any:
+    #     if "__aiter__" in self._recorded_attribute_accesses:
+    #         result = self._recorded_attribute_accesses["__aiter__"]
+    #         if isinstance(result, list):
+    #             value = result.pop(0)
+    #             if isinstance(value, dict) and value.get("__type__") == "async_value":
+    #                 return self
+    #             return self
+    #         return self
+    #     raise AttributeError("No recorded __aiter__ result found.")
 
     def __aiter__(self) -> Any:
         if "__aiter__" in self._recorded_attribute_accesses:

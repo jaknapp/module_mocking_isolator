@@ -253,34 +253,73 @@ async def test_recording_mock_async_iteration(mocker: BasicRecordingMocker) -> N
 
     assert results == [1, 2, 3]
     assert "__aiter__" in mock.recorded_attribute_accesses
-    assert "__anext__" in mock.recorded_attribute_accesses
-    assert len(mock.recorded_attribute_accesses["__anext__"]) == 4  # 3 values + StopAsyncIteration
+    wrapped_iterator = mock.recorded_attribute_accesses["__aiter__"][0]
+    assert "__anext__" in wrapped_iterator.recorded_attribute_accesses
+    assert len(wrapped_iterator.recorded_attribute_accesses["__anext__"]) == 4  # 3 values + StopAsyncIteration
 
 @pytest.mark.asyncio
-async def test_recording_mock_async_iteration_with_separate_iterator(mocker: BasicRecordingMocker) -> None:
+async def test_recording_mock_async_iteration_with_separate_iterator():
     class AsyncIterator:
-        def __init__(self, max_count: int):
-            self._count = 0
-            self._max_count = max_count
+        def __init__(self):
+            self.items = [1, 2, 3]
+            self.index = 0
 
         async def __anext__(self):
-            if self._count >= self._max_count:
+            if self.index >= len(self.items):
                 raise StopAsyncIteration
-            self._count += 1
-            return self._count
+            item = self.items[self.index]
+            self.index += 1
+            return item
 
     class AsyncIterable:
         def __aiter__(self):
-            return AsyncIterator(3)
+            return AsyncIterator()
 
-    instance = AsyncIterable()
-    mock = RecordingMock(instance, mocker)
-
-    results = []
+    mock = RecordingMock(wrapped_item=AsyncIterable(), mocker=BasicRecordingMocker())
+    items = []
     async for item in mock:
-        results.append(item)
+        items.append(item)
 
-    assert results == [1, 2, 3]
+    assert items == [1, 2, 3]
     assert "__aiter__" in mock.recorded_attribute_accesses
-    assert "__anext__" in mock.recorded_attribute_accesses
-    assert len(mock.recorded_attribute_accesses["__anext__"]) == 4  # 3 values + StopAsyncIteration
+    wrapped_iterator = mock.recorded_attribute_accesses["__aiter__"][0]
+    assert "__anext__" in wrapped_iterator.recorded_attribute_accesses
+    assert len(wrapped_iterator.recorded_attribute_accesses["__anext__"]) == 4  # 3 items + StopAsyncIteration
+
+@pytest.mark.asyncio
+async def test_recording_mock_async_iteration_with_websocket_like_behavior():
+    class WebSocketLike:
+        def __init__(self):
+            self.messages = ["msg1", "msg2", "msg3"]
+            self.index = 0
+            self.closed = False
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if self.closed or self.index >= len(self.messages):
+                raise StopAsyncIteration
+            msg = self.messages[self.index]
+            self.index += 1
+            return msg
+
+        async def close(self):
+            self.closed = True
+
+    # Create a websocket-like object and wrap it
+    ws = WebSocketLike()
+    mock = RecordingMock(wrapped_item=ws, mocker=BasicRecordingMocker())
+
+    # Test async iteration
+    messages = []
+    async for msg in mock:
+        messages.append(msg)
+        if len(messages) == 2:  # Simulate closing after 2 messages
+            await ws.close()
+
+    assert messages == ["msg1", "msg2"]
+    assert "__aiter__" in mock.recorded_attribute_accesses
+    wrapped_iterator = mock.recorded_attribute_accesses["__aiter__"][0]
+    assert "__anext__" in wrapped_iterator.recorded_attribute_accesses
+    assert len(wrapped_iterator.recorded_attribute_accesses["__anext__"]) == 3  # 2 messages + StopAsyncIteration

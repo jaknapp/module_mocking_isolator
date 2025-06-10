@@ -116,21 +116,18 @@ class RecordingMock:
         return result
 
     def __aiter__(self) -> Any:
-        wrapped_item = object.__getattribute__(self, "_wrapped_item")
-        aiter = wrapped_item.__aiter__()
+        aiter_value = aiter(self._wrapped_item)
+        wrapped_aiter = self._mocker.wrap_item_with_recording_mocks(item=aiter_value)
         if "__aiter__" not in self.recorded_attribute_accesses:
             self.recorded_attribute_accesses["__aiter__"] = []
             self.recorded_async_attribute_access_indexes["__aiter__"] = set()
         self.recorded_async_attribute_access_indexes["__aiter__"].add(len(self.recorded_attribute_accesses["__aiter__"]))
-        self.recorded_attribute_accesses["__aiter__"].append(aiter)
-        # Store the iterator for __anext__ to use
-        self._current_iterator = aiter
-        return self
+        self.recorded_attribute_accesses["__aiter__"].append(wrapped_aiter)
+        return wrapped_aiter
 
     async def __anext__(self) -> Any:
         try:
-            # Use the stored iterator instead of the wrapped item
-            result = await self._current_iterator.__anext__()
+            result = await anext(self._wrapped_item)
             wrapped_result = self._mocker.wrap_item_with_recording_mocks(item=result)
             if "__anext__" not in self.recorded_attribute_accesses:
                 self.recorded_attribute_accesses["__anext__"] = []
