@@ -255,3 +255,32 @@ async def test_recording_mock_async_iteration(mocker: BasicRecordingMocker) -> N
     assert "__aiter__" in mock.recorded_attribute_accesses
     assert "__anext__" in mock.recorded_attribute_accesses
     assert len(mock.recorded_attribute_accesses["__anext__"]) == 4  # 3 values + StopAsyncIteration
+
+@pytest.mark.asyncio
+async def test_recording_mock_async_iteration_with_separate_iterator(mocker: BasicRecordingMocker) -> None:
+    class AsyncIterator:
+        def __init__(self, max_count: int):
+            self._count = 0
+            self._max_count = max_count
+
+        async def __anext__(self):
+            if self._count >= self._max_count:
+                raise StopAsyncIteration
+            self._count += 1
+            return self._count
+
+    class AsyncIterable:
+        def __aiter__(self):
+            return AsyncIterator(3)
+
+    instance = AsyncIterable()
+    mock = RecordingMock(instance, mocker)
+
+    results = []
+    async for item in mock:
+        results.append(item)
+
+    assert results == [1, 2, 3]
+    assert "__aiter__" in mock.recorded_attribute_accesses
+    assert "__anext__" in mock.recorded_attribute_accesses
+    assert len(mock.recorded_attribute_accesses["__anext__"]) == 4  # 3 values + StopAsyncIteration
