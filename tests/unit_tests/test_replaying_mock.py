@@ -239,3 +239,71 @@ async def test_replaying_mock_async_iteration() -> None:
         results.append(item)
 
     assert results == [1, 2, 3]
+
+@pytest.mark.asyncio
+async def test_replaying_mock_async_context_manager_with_repeat() -> None:
+    """Test that __aenter__ properly returns the ReplayingMock object from __repeat__ structure."""
+    # Create a mock that represents a websocket-like object
+    websocket_mock = ReplayingMock(
+        recorded_attribute_accesses={
+            "__aiter__": [{"__type__": "async_value", "value": None}],
+            "__anext__": [
+                {"__type__": "async_value", "value": "message1"},
+                {"__type__": "async_value", "value": "message2"},
+                {"__type__": "async_value", "value": StopAsyncIteration()}
+            ]
+        },
+        recorded_calls=[]
+    )
+    
+    # Create a mock that has a __repeat__ structure for __aenter__
+    context_mock = ReplayingMock(
+        recorded_attribute_accesses={
+            "__aenter__": {"__repeat__": websocket_mock},
+            "__aexit__": {"__repeat__": True}
+        },
+        recorded_calls=[]
+    )
+    
+    # Test the async context manager
+    async with context_mock as websocket:
+        # websocket should be the ReplayingMock object, not the dictionary
+        assert isinstance(websocket, ReplayingMock)
+        assert not isinstance(websocket, dict)
+        
+        # Test async iteration on the websocket
+        messages = []
+        async for message in websocket:
+            messages.append(message)
+        
+        assert messages == ["message1", "message2"]
+
+@pytest.mark.asyncio
+async def test_replaying_mock_aiter_with_repeat() -> None:
+    """Test that __aiter__ properly returns the ReplayingMock object from __repeat__ structure."""
+    # Create a mock that represents the websocket with __anext__ values
+    websocket_iter_mock = ReplayingMock(
+        recorded_attribute_accesses={
+            "__anext__": [
+                {"__type__": "async_value", "value": "message1"},
+                {"__type__": "async_value", "value": "message2"},
+                {"__type__": "async_value", "value": StopAsyncIteration()}
+            ]
+        },
+        recorded_calls=[]
+    )
+    
+    # Create a mock that has a __repeat__ structure for __aiter__
+    websocket_mock = ReplayingMock(
+        recorded_attribute_accesses={
+            "__aiter__": {"__repeat__": websocket_iter_mock}
+        },
+        recorded_calls=[]
+    )
+    
+    # Test the async iteration
+    messages = []
+    async for message in websocket_mock:
+        messages.append(message)
+    
+    assert messages == ["message1", "message2"]

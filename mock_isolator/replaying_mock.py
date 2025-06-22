@@ -64,7 +64,12 @@ class ReplayingMock:
         if "__aenter__" in self._recorded_attribute_accesses:
             result = self._recorded_attribute_accesses["__aenter__"]
             if isinstance(result, list):
-                return result.pop(0)
+                value = result.pop(0)
+                if isinstance(value, dict) and "__repeat__" in value:
+                    return value["__repeat__"]
+                return value
+            elif isinstance(result, dict) and "__repeat__" in result:
+                return result["__repeat__"]
             return result
         raise AttributeError("No recorded __aenter__ result found.")
 
@@ -77,7 +82,12 @@ class ReplayingMock:
         if "__aexit__" in self._recorded_attribute_accesses:
             result = self._recorded_attribute_accesses["__aexit__"]
             if isinstance(result, list):
-                return result.pop(0)
+                value = result.pop(0)
+                if isinstance(value, dict) and "__repeat__" in value:
+                    return value["__repeat__"]
+                return value
+            elif isinstance(result, dict) and "__repeat__" in result:
+                return result["__repeat__"]
             return result
         return False
 
@@ -85,7 +95,12 @@ class ReplayingMock:
         if "__enter__" in self._recorded_attribute_accesses:
             result = self._recorded_attribute_accesses["__enter__"]
             if isinstance(result, list):
-                return result.pop(0)
+                value = result.pop(0)
+                if isinstance(value, dict) and "__repeat__" in value:
+                    return value["__repeat__"]
+                return value
+            elif isinstance(result, dict) and "__repeat__" in result:
+                return result["__repeat__"]
             return result
         raise AttributeError("No recorded __enter__ result found.")
 
@@ -98,20 +113,14 @@ class ReplayingMock:
         if "__exit__" in self._recorded_attribute_accesses:
             result = self._recorded_attribute_accesses["__exit__"]
             if isinstance(result, list):
-                return result.pop(0)
+                value = result.pop(0)
+                if isinstance(value, dict) and "__repeat__" in value:
+                    return value["__repeat__"]
+                return value
+            elif isinstance(result, dict) and "__repeat__" in result:
+                return result["__repeat__"]
             return result
         return False
-
-    # async def __aiter__(self) -> Any:
-    #     if "__aiter__" in self._recorded_attribute_accesses:
-    #         result = self._recorded_attribute_accesses["__aiter__"]
-    #         if isinstance(result, list):
-    #             value = result.pop(0)
-    #             if isinstance(value, dict) and value.get("__type__") == "async_value":
-    #                 return self
-    #             return self
-    #         return self
-    #     raise AttributeError("No recorded __aiter__ result found.")
 
     def __aiter__(self) -> Any:
         if "__aiter__" in self._recorded_attribute_accesses:
@@ -120,8 +129,12 @@ class ReplayingMock:
                 value = result.pop(0)
                 if isinstance(value, dict) and value.get("__type__") == "async_value":
                     return self
-                return self
-            return self
+                elif isinstance(value, dict) and "__repeat__" in value:
+                    return value["__repeat__"]
+                return value
+            elif isinstance(result, dict) and "__repeat__" in result:
+                return result["__repeat__"]
+            return result
         raise AttributeError("No recorded __aiter__ result found.")
 
     async def __anext__(self) -> Any:

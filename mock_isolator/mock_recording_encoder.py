@@ -233,6 +233,8 @@ class DictMockRecordingEncoder(MockRecordingEncoder[DictEncodingType]):
                         return date.fromisoformat(str(item["value"]))
                     elif item["__type__"] == "ObjectId":
                         return ObjectId(str(item["value"]))
+                    elif item["__type__"] == "async_value":
+                        return item["value"]
                     elif item["__type__"] in ["frozenset", "set", "tuple"]:
                         item_value = item["value"]
                         if not isinstance(item_value, list):
