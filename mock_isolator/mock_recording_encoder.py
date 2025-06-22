@@ -112,7 +112,7 @@ class DictMockRecordingEncoder(MockRecordingEncoder[DictEncodingType]):
                 }
                 if item.recorded_attribute_accesses:
                     encoded_attribute_accesses = {
-                        k: [encode_item(attr, is_async) for (attr, is_async) in zip(v, (item.recorded_async_attribute_access_indexes.get(k, {}).get(i, False) for i in range(len(v))))]
+                        k: [encode_item(attr, is_async) for (attr, is_async) in zip(v, (i in item.recorded_async_attribute_access_indexes.get(k, set()) for i in range(len(v))))]
                         for k, v in item.recorded_attribute_accesses.items()
                     }
                     encoded_attribute_accesses_compacted = {
